@@ -43,7 +43,7 @@ def one_hot_encoding(label_array, num_labels):
 
 def reformat_array(data_array, image_size, num_channels):
     data_array = data_array.reshape(
-        -1, image_size, image_size, num_channels)
+        -1, image_size, image_size, num_channels).astype(np.float32)
     return data_array
 
 
