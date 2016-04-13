@@ -93,12 +93,15 @@ def main():
 
     batch_size = 15
     conv1_kernels = 32
-    depth = 16
+    conv2_kernels = 64
     image_size = 28
     num_channels = 1
     num_labels = 10
+    num_neurons = 1024
     patch_size = 5
     pixel_depth = 255.0
+    pool_stride = 2
+    pool_window = 2
     split_ratio = 0.9
 
     if os.path.isfile(TRAINING_DATA_PICKLE):
@@ -143,6 +146,12 @@ def main():
     graph = tf.Graph()
 
     with graph.as_default():
+        tf_train_dataset = tf.placeholder(
+            tf.float32,
+            shape=(batch_size, image_size, image_size, num_channels))
+        tf_train_labels = tf.placeholder(
+            tf.float32, shape=(batch_size, num_labels))
+        keep_prob = tf.placeholder(tf.float32)
 
         '''
         For a weight for convnet must be a 4D array, that must contain:
@@ -153,6 +162,30 @@ def main():
         conv1_weight = weight_variable(
             [patch_size, patch_size, num_channels, conv1_kernels])
         conv1_bias = bias_variable([conv1_kernels])
+
+        conv2_weight = weight_variable(
+            [patch_size, patch_size, conv1_kernels, conv2_kernels])
+        conv2_bias = bias_variable([conv2_kernels])
+
+        fc_weight1 = weight_variable([7 * 7 * 64, num_neurons])
+        fc_bias1 = bias_variable([num_neurons])
+
+        fc_weight2 = weight_variable([1024, 10])
+        fc_bias2 = bias_variable([10])
+
+        def model(data):
+            l_conv1 = tf.nn.relu(
+                conv2d(tf_train_dataset, conv1_weight) + conv1_bias)
+            l_pool1 = max_pool(l_conv1, pool_window, pool_stride)
+
+            l_conv2 = tf.nn.relu(conv2d(l_pool1, conv2_weight) + conv2_bias)
+            l_pool2 = max_pool(l_conv2, pool_window, pool_stride)
+            l_pool2_flat = tf.reshape(l_pool2, (-1, 7 * 7 * 64))
+
+            l_fc1 = tf.nn.relu(tf.matmul(l_pool2_flat, fc_weight1) + fc_bias1)
+            l_fc1_drop = tf.nn.dropout(l_fc1, keep_prob)
+
+            return tf.matmul(l_fc1_drop, fc_weight2) + fc_bias2
 
 
 if __name__ == '__main__':
