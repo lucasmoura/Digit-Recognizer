@@ -37,6 +37,13 @@ def split_data(data, split_ratio):
     return (data[train_index], data[~train_index])
 
 
+def split_labels_from_data(data, label):
+    labels = data[label].to_frame(name=label)
+    data = data.drop(label, 1)
+
+    return (labels, data)
+
+
 def main():
 
     split_ratio = 0.9
@@ -52,6 +59,9 @@ def main():
     print 'Total data used: {}'.format(len(mnist_data))
 
     training_data, test_data = split_data(mnist_data, split_ratio)
+    train_labels, training_data = split_labels_from_data(
+        training_data, 'label')
+    test_labels, test_data = split_labels_from_data(test_data, 'label')
 
     print 'Training data used: {}'.format(len(training_data))
     print 'Test data used: {}'.format(len(test_data))
