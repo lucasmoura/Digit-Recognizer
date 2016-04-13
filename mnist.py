@@ -37,6 +37,10 @@ def max_pool(inputs, window_size, stride):
         stride=[1, stride, stride, 1], padding='SAME')
 
 
+def one_hot_encoding(label_array, num_labels):
+    return (np.arange(num_labels) == label_array[:, None]).astype(np.float32)
+
+
 def reformat_array(data_array, image_size, num_channels):
     data_array = data_array.reshape(
         -1, image_size, image_size, num_channels)
@@ -109,6 +113,14 @@ def main():
     '''
     training_array = reformat_array(training_data.as_matrix())
     test_array = reformat_array(test_data.as_matrix())
+
+    '''
+    Since this is a classification task and the softmax function will be
+    used for the output neuron, the labels must be in a one hot enconding
+    format
+    '''
+    train_labels = one_hot_encoding(train_labels, num_labels)
+    test_labels = one_hot_encoding(test_labels, num_labels)
 
     graph = tf.Graph()
 
