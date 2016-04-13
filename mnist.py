@@ -9,7 +9,20 @@ import tensorflow as tf
 DATA_FOLDER = 'data/'
 TRAINING_DATA_PATH = DATA_FOLDER + 'train.csv'
 
-TRAINING_DATA_PICKLE = DATA_FOLDER + 'train.pickle'
+TRAINING_DATA_PICKLE = DATA_FOLDER + 'data.pickle'
+
+
+def apply_regularization(data, pixel_depth):
+    mean = pixel_depth / 2
+    for column in data:
+        # TODO: Remove this check
+        if column == 'label':
+            continue
+
+        data[column] = data[column].map(
+            lambda x: (x - mean) / pixel_depth)
+
+    return data
 
 
 def bias_variable(shape):
@@ -85,6 +98,7 @@ def main():
     num_channels = 1
     num_labels = 10
     patch_size = 5
+    pixel_depth = 255.0
     split_ratio = 0.9
 
     if os.path.isfile(TRAINING_DATA_PICKLE):
@@ -93,6 +107,8 @@ def main():
     else:
         print 'Reading csv...'
         mnist_data = pd.read_csv(TRAINING_DATA_PATH, header=0)
+        print 'Applying feature regularization...'
+        mnist_data = apply_regularization(mnist_data, pixel_depth)
         save_data(mnist_data)
 
     print 'Total data used: {}'.format(len(mnist_data))
@@ -111,31 +127,32 @@ def main():
     image height, number of channels. Therefore, the original array
     must be reshaped to fix that.
     '''
-    training_array = reformat_array(training_data.as_matrix())
-    test_array = reformat_array(test_data.as_matrix())
+    training_array = reformat_array(
+        training_data.as_matrix(), image_size, num_channels)
+    test_array = reformat_array(
+        test_data.as_matrix(), image_size, num_channels)
 
     '''
     Since this is a classification task and the softmax function will be
     used for the output neuron, the labels must be in a one hot enconding
     format
     '''
-    train_labels = one_hot_encoding(train_labels, num_labels)
-    test_labels = one_hot_encoding(test_labels, num_labels)
+    train_labels = one_hot_encoding(train_labels.as_matrix(), num_labels)
+    test_labels = one_hot_encoding(test_labels.as_matrix(), num_labels)
 
     graph = tf.Graph()
 
     with graph.as_default():
-        
+
         '''
         For a weight for convnet must be a 4D array, that must contain:
         Both patch width and height, number of channels of the image and
         the number of kernels that will be used to capture features from
         the image.
-        ''' 
+        '''
         conv1_weight = weight_variable(
             [patch_size, patch_size, num_channels, conv1_kernels])
         conv1_bias = bias_variable([conv1_kernels])
-
 
 
 if __name__ == '__main__':
