@@ -153,6 +153,9 @@ def main():
             tf.float32, shape=(batch_size, num_labels))
         keep_prob = tf.placeholder(tf.float32)
 
+        tf_valid_dataset = tf.constant(valid_dataset)
+        tf_test_dataset = tf.constant(test_dataset)
+
         '''
         For a weight for convnet must be a 4D array, that must contain:
         Both patch width and height, number of channels of the image and
@@ -187,6 +190,15 @@ def main():
 
             return tf.matmul(l_fc1_drop, fc_weight2) + fc_bias2
 
+        logits = model(tf_train_dataset)
+        loss = tf.reduce_mean(
+            tf.nn.softmax_cross_entropy_with_logits(logits, tf_train_labels))
+
+        optimizer = tf.train.AdamOptimizer(1e-4).minimize(loss)
+
+        train_prediction = tf.nn.softmax(logits)
+        valid_prediction = tf.nn.softmax(model(tf_valid_dataset))
+        test_prediction = tf.nn.softmax(model(tf_test_dataset))
 
 if __name__ == '__main__':
     main()
